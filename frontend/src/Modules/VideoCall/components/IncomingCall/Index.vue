@@ -2,7 +2,6 @@
   <q-dialog
     v-model="videoCallStore.callRequestFormShow"
     persistent
-    @show="start"
   >
     <q-card>
       <q-card-section class="row items-center">
@@ -22,12 +21,6 @@
 import { useVideoCallStore } from 'src/Modules/VideoCall/stores/useVideoCallStore.js'
 
 const videoCallStore = useVideoCallStore()
-
-const start = () => {
-  setTimeout(() => {
-    takeCall()
-  }, 500)
-}
 
 const takeCall = () => videoCallStore.takeCall()
 const rejectCall = () => videoCallStore.rejectCall('Собеседник отклонил вызов')

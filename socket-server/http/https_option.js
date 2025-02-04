@@ -7,9 +7,9 @@ let options = {
 }
 
 if (config.ENV === 'prod') {
-  const privateKey = fs.readFileSync('/var/www/letsencrypt/live/' + config.NAME_SERVER + '/privkey.pem', 'utf8')
-  const certificate = fs.readFileSync('/var/www/letsencrypt/live/' + config.NAME_SERVER + '/cert.pem', 'utf8')
-  const ca = fs.readFileSync('/var/www/letsencrypt/live/' + config.NAME_SERVER + '/chain.pem', 'utf8')
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/' + config.NAME_SERVER + '/privkey.pem', 'utf8')
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/' + config.NAME_SERVER + '/cert.pem', 'utf8')
+  const ca = fs.readFileSync('/etc/letsencrypt/live/' + config.NAME_SERVER + '/chain.pem', 'utf8')
   options =
     {
       key: privateKey,
