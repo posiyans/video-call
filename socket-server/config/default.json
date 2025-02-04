@@ -1,0 +1,17 @@
+{
+  "ENV": "local",
+  "NAME_SERVER": "localhost",
+  "SERVER_PORT": 8443,
+  "CORS": {
+    "origin": [
+      "http://localhost:9000",
+      "http://localhost"
+    ],
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "allowedHeaders": [],
+    "credentials": true
+  }
+}
