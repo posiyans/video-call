@@ -3,12 +3,9 @@ class VideoClass {
     this.io = io
     this.Users = users
     io.on('connection', (socket) => {
-      console.log('New connection:', socket.id);
-      this.Users.addUser(socket)
-
       // Регистрация пользователя
       socket.on('register', (data) => {
-        this.handleRegistration(socket, data)
+        this.handleRegistration()
       })
 
       // Подписка на события
@@ -16,17 +13,13 @@ class VideoClass {
 
       // Обработка отключения пользователя
       socket.on('disconnecting', () => {
-        this.handleDisconnection(socket.id);
+        this.handleDisconnection();
       })
     })
   }
 
-
   // Обработка регистрации пользователя
-  handleRegistration(socket, data) {
-    console.log('User registered:', socket.id, data.uid);
-    this.Users.setUserUidForSocket(socket.id, data.uid);
-    this.Users.setUserDataForSocket(socket.id, { name: data.name });
+  handleRegistration() {
     this.sendUserOnline();
   }
 
@@ -39,12 +32,12 @@ class VideoClass {
       stopCall: this.handleStopCall.bind(this, socket),
       endCall: this.handleEndCall.bind(this),
       takeCall: this.handleTakeCall.bind(this, socket),
-      startCall: this.handleStartCall.bind(this, socket),
-    };
+      startCall: this.handleStartCall.bind(this, socket)
+    }
 
     Object.entries(events).forEach(([event, handler]) => {
       socket.on(event, handler);
-    });
+    })
 
   }
 
@@ -55,8 +48,8 @@ class VideoClass {
       recipientUser.socket.emit('rejectCall', {
         callUid: data.callUid,
         recipient: { uid: data.user.uid },
-        message: data.message ?? '',
-      });
+        message: data.message ?? ''
+      })
     }
     // Уведомление всех вкладок пользователя
     this.Users.getUsersByUid(data.user.uid).forEach(user => {
@@ -94,7 +87,6 @@ class VideoClass {
       }
     })
   }
-
 
   // Обработка завершения звонка
   handleEndCall(data) {
@@ -140,7 +132,6 @@ class VideoClass {
 
   // Обработка отключения пользователя
   handleDisconnection(socketId) {
-    this.Users.deleteUser(socketId);
     this.sendUserOnline();
   }
 

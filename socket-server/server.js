@@ -6,5 +6,5 @@ const io = require('socket.io')(server, {
   allowEIO3: true,
   cors: config.CORS
 })
-const users = new UsersClass()
+const users = new UsersClass(io)
 const Video = new VideoClass(io, users)
