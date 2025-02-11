@@ -1,7 +1,7 @@
 <template>
   <div>
     <div @click="call">
-      <slot name="default" v-bind:calling="calling">
+      <slot name="default" :calling="calling">
         <q-btn color="secondary" :label="label" no-caps :loading="calling" />
       </slot>
     </div>
