@@ -1,6 +1,10 @@
 <template>
   <div>
-    <q-btn color="secondary" :label="label" no-caps :loading="calling" @click="call" />
+    <div @click="call">
+      <slot name="default" v-bind:calling="calling">
+        <q-btn color="secondary" :label="label" no-caps :loading="calling" />
+      </slot>
+    </div>
     <q-dialog v-model="stopDialogShow" seamless position="bottom">
       <q-card>
         <q-card-section class="row items-center no-wrap">
@@ -19,7 +23,6 @@ import { errorMessage } from 'src/utils/message.js'
 import { computed } from 'vue'
 import { uid } from 'quasar'
 
-
 const props = defineProps({
   recipientUid: {
     type: [String, Number],
@@ -31,20 +34,21 @@ const props = defineProps({
   }
 })
 
-
 const videoCallStore = useVideoCallStore()
 
 const calling = computed(() => {
   return videoCallStore.recipient.uid === props.recipientUid && videoCallStore.statusId === 2
 })
+
 const stopDialogShow = computed(() => {
   return videoCallStore.statusId === 2
 })
+
 const stopCall = () => {
   videoCallStore.stopCall()
 }
-const call = async () => {
 
+const call = async () => {
   try {
     videoCallStore.stream = await navigator.mediaDevices.getUserMedia({
       video: true,

@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia';
-import { useUserStore } from './useUserStore.js';
-import { errorMessage } from 'src/utils/message.js';
-import { useSocketStore } from './useSocketStore.js';
+import { defineStore } from 'pinia'
+import { useUserStore } from './useUserStore.js'
+import { errorMessage } from 'src/utils/message.js'
+import { useSocketStore } from './useSocketStore.js'
 import { computed, ref } from 'vue'
 import { uid } from 'quasar'
 
@@ -40,7 +40,7 @@ export const useVideoCallStore = defineStore('videoCall', () => {
       socketStore.socket.emit('startCall', {
         recipientUid,
         callUid: callUid.value,
-        data: userStore.user
+        data: userStore.getUser()
       })
       recipient.value = { uid: recipientUid }
       isCaller.value = true
@@ -55,19 +55,21 @@ export const useVideoCallStore = defineStore('videoCall', () => {
       stream.value = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
-      });
+      })
+      const user = userStore.getUser()
+      user.uid = userStore.getUid()
       socketStore.socket.emit('takeCall', {
         callUid: callUid.value,
         recipient: {
           socketId: recipient.value.socketId
         },
-        user: userStore.user
-      });
+        user
+      })
       statusId.value = 10
       callDialogShow.value = true
     } catch (e) {
-      rejectCall('У собеседника нет доступа к камере или микрофону');
-      errorMessage('У вас нет доступа к камере или микрофону');
+      rejectCall('У собеседника нет доступа к камере или микрофону')
+      errorMessage('У вас нет доступа к камере или микрофону')
     }
   }
 
@@ -77,10 +79,10 @@ export const useVideoCallStore = defineStore('videoCall', () => {
         socketId: recipient.socketId
       },
       user: {
-        id: userStore.user.id
+        uid: userStore.getUid()
       },
       message: 'Собеседник разговаривает'
-    });
+    })
     errorMessage('Вам завонил ' + recipient.name)
   }
 
@@ -108,8 +110,8 @@ export const useVideoCallStore = defineStore('videoCall', () => {
           uid: userStore.getUid()
         }
       }
-    });
-    setStatusOnline();
+    })
+    setStatusOnline()
   }
 
   function stopCall() {
@@ -121,8 +123,8 @@ export const useVideoCallStore = defineStore('videoCall', () => {
       user: {
         uid: userStore.getUid()
       }
-    });
-    setStatusOnline();
+    })
+    setStatusOnline()
   }
 
   function setStatusOnline() {
@@ -137,7 +139,7 @@ export const useVideoCallStore = defineStore('videoCall', () => {
 
   function setStatusOffline() {
     setStatusOnline()
-    statusId.value = 0;
+    statusId.value = 0
   }
 
   return {

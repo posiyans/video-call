@@ -1,5 +1,4 @@
-import { useVideoCallStore } from 'src/Modules/VideoCall/stores/useVideoCallStore.js'
-
+import { useVideoCallStore } from '../../stores/useVideoCallStore.js'
 import { useSocketStore } from '../../stores/useSocketStore.js'
 import { errorMessage } from 'src/utils/message.js'
 
