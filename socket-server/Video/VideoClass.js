@@ -1,138 +1,153 @@
 class VideoClass {
-  constructor(io) {
+  constructor(io, users) {
     this.io = io
-    this.Users = {}
+    this.Users = users
     io.on('connection', (socket) => {
-      console.log('connection')
-      console.log(socket.id)
-      this.Users[socket.id] = {
-        socket: socket,
-        name: null,
-        id: null
-      }
+      console.log('New connection:', socket.id);
+      this.Users.addUser(socket)
+
+      // Регистрация пользователя
       socket.on('register', (data) => {
-        console.log('register')
-        console.log(socket.id)
-        this.Users[socket.id].name = data.name
-        this.Users[socket.id].id = data.id
-        this.sendUserOnline()
+        this.handleRegistration(socket, data)
       })
-      this.subscribe(socket)
+
+      // Подписка на события
+      this.subscribeEvents(socket);
+
+      // Обработка отключения пользователя
       socket.on('disconnecting', () => {
-        delete this.Users[socket.id]
-        this.sendUserOnline()
+        this.handleDisconnection(socket.id);
       })
     })
   }
 
-  subscribe(socket) {
-    this.subscribeStartCall(socket)
-    this.subscribeRejectCall(socket)
-    this.subscribeTakeCall(socket)
-    this.subscribeEndCall(socket)
-    this.subscribeSdp(socket)
-    this.subscribeIce(socket)
-    this.subscribeStopCall(socket)
+
+  // Обработка регистрации пользователя
+  handleRegistration(socket, data) {
+    console.log('User registered:', socket.id, data.uid);
+    this.Users.setUserUidForSocket(socket.id, data.uid);
+    this.Users.setUserDataForSocket(socket.id, { name: data.name });
+    this.sendUserOnline();
   }
 
-  subscribeSdp(socket) {
-    socket.on('sdp', data => {
-      if (this.Users[data.recipient.socketId]) {
-        this.Users[data.recipient.socketId].socket.emit('sdp', { sdp: data.sdp, recipient: { id: this.Users[data.recipient.socketId].id } })
-      }
-    })
+  // Подписка на все события
+  subscribeEvents(socket) {
+    const events = {
+      sdp: this.handleSdp.bind(this),
+      ice: this.handleIce.bind(this),
+      rejectCall: this.handleRejectCall.bind(this),
+      stopCall: this.handleStopCall.bind(this, socket),
+      endCall: this.handleEndCall.bind(this),
+      takeCall: this.handleTakeCall.bind(this, socket),
+      startCall: this.handleStartCall.bind(this, socket),
+    };
+
+    Object.entries(events).forEach(([event, handler]) => {
+      socket.on(event, handler);
+    });
+
   }
 
-  subscribeIce(socket) {
-    socket.on('ice', data => {
-      if (this.Users[data.recipient.socketId]) {
-        this.Users[data.recipient.socketId].socket.emit('ice', { ice: data.ice, recipient: { id: this.Users[data.recipient.socketId].id } })
-      }
-    })
-  }
-
-  subscribeRejectCall(socket) {
-    socket.on('rejectCall', data => {
-      this.Users[data.recipient.socketId].socket.emit('rejectCall',
-        {
-          recipient:
-            {
-              id: data.user.id
-            },
-          message: data.message ?? ''
-        })
-    })
-  }
-
-  subscribeStopCall(socket) {
-    socket.on('stopCall', data => {
-      console.log('stop call')
-      console.log(data)
-      const recipient = Object.values(this.Users).find(item => {
-        return item.id === data.recipient.id
+  // Обработка отклонения звонка
+  handleRejectCall(data) {
+    const recipientUser = this.Users.getUserBySocketId(data.recipient.socketId);
+    if (recipientUser) {
+      recipientUser.socket.emit('rejectCall', {
+        callUid: data.callUid,
+        recipient: { uid: data.user.uid },
+        message: data.message ?? '',
+      });
+    }
+    // Уведомление всех вкладок пользователя
+    this.Users.getUsersByUid(data.user.uid).forEach(user => {
+      user.socket.emit('rejectCall', {
+        callUid: data.callUid,
+        recipient: { id: data.user.uid },
       })
-      if (recipient) {
-        recipient.socket.emit('stopCall', {
-          recipient: {
-            id: data.user.id,
-            name: data.user.name,
-            socketId: socket.id
-          }
-        })
-      }
     })
   }
 
-  subscribeEndCall(socket) {
-    socket.on('endCall', data => {
-      console.log('end call')
-      console.log(data)
-      if (this.Users[data.recipient.socketId]) {
-        this.Users[data.recipient.socketId].socket.emit('endCall', { recipient: { id: data.recipient.user.id } })
-      }
-    })
-  }
-
-  subscribeTakeCall(socket) {
-    socket.on('takeCall', data => {
-      if (this.Users[data.recipient.socketId]) {
-        this.Users[data.recipient.socketId].socket.emit('takeCall', { recipient: { id: data.user.id, name: data.user.name, socketId: socket.id } })
-      }
-    })
-  }
-
-  subscribeStartCall(socket) {
-    socket.on('startCall', data => {
-      console.log('startCall')
-      console.log(data.recipientId)
-      const recipient = Object.values(this.Users).find(item => {
-        return item.id === data.recipientId
+  // Обработка остановки звонка
+  handleStopCall(socket, data) {
+    this.Users.getUsersByUid(data.recipient.uid).forEach(user => {
+      user.socket.emit('stopCall', {
+        callUid: data.callUid,
+        recipient: { uid: data.user.uid },
+        socketId: socket.id
       })
-      if (recipient) {
-        console.log('callRequest')
-        recipient.socket.emit('callRequest', {
-            recipient: {
-              id: data.user.id,
-              name: data.user.name,
-              socketId: socket.id
-            }
-          }
-        )
-      }
-      // console.log(data)
     })
   }
 
+  // Обработка принятия звонка
+  handleTakeCall(socket, data) {
+    const recipientUser = this.Users.getUserBySocketId(data.recipient.socketId);
+    if (recipientUser) {
+      recipientUser.socket.emit('takeCall', {
+        recipient: { uid: data.user.uid, data: data.user, socketId: socket.id },
+      });
+    }
+
+    // Уведомление всех вкладок пользователя
+    this.Users.getUsersByUid(data.user.uid).forEach(user => {
+      if (user.socket.id !== socket.id) {
+        user.socket.emit('rejectCall', { callUid: data.callUid });
+      }
+    })
+  }
+
+
+  // Обработка завершения звонка
+  handleEndCall(data) {
+    const user = this.Users.getUserBySocketId(data.recipient.socketId);
+    if (user) {
+      user.socket.emit('endCall', {
+        callUid: data.callUid,
+        recipient: { uid: data.recipient.user.uid }
+      })
+    }
+  }
+
+  // Обработка начала звонка
+  handleStartCall(socket, data) {
+    const recipients = this.Users.getUsersByUid(data.recipientUid);
+    recipients.forEach(recipient => {
+      recipient.socket.emit('callRequest', {
+        callUid: data.callUid,
+        recipient: { data: data.data, socketId: socket.id },
+      });
+    });
+  }
+
+  // Обработка SDP
+  handleSdp(data) {
+    const user = this.Users.getUserBySocketId(data.recipient.socketId);
+    if (user) {
+      user.socket.emit('sdp', { sdp: data.sdp, recipient: { uid: user.uid } });
+    } else {
+      console.error('User not found for socket ID:', data.recipient.socketId);
+    }
+  }
+
+  // Обработка ICE
+  handleIce(data) {
+    const user = this.Users.getUserBySocketId(data.recipient.socketId);
+    if (user) {
+      user.socket.emit('ice', { ice: data.ice, recipient: { uid: user.uid } });
+    } else {
+      console.error('User not found for socket ID:', data.recipient.socketId);
+    }
+  }
+
+  // Обработка отключения пользователя
+  handleDisconnection(socketId) {
+    this.Users.deleteUser(socketId);
+    this.sendUserOnline();
+  }
+
+  // Отправка списка онлайн-пользователей
   sendUserOnline() {
-    const uidOnline = Object.values(this.Users)
-      .filter(user => user.id)
-      .map(item => {
-        return {
-          id: item.id,
-          name: item.name
-        }
-      })
-    this.io.emit('ONLINE', { 'users': uidOnline })
+    const users = this.Users.getAllRegUsers()
+    this.io.emit('ONLINE', { users })
   }
 }
 

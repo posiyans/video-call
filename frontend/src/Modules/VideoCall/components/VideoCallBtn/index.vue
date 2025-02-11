@@ -1,6 +1,6 @@
 <template>
-  <div v-if="userStore.user.id">
-    <q-btn color="secondary" :label="label" @click="call" no-caps :loading="calling" />
+  <div>
+    <q-btn color="secondary" :label="label" no-caps :loading="calling" @click="call" />
     <q-dialog v-model="stopDialogShow" seamless position="bottom">
       <q-card>
         <q-card-section class="row items-center no-wrap">
@@ -14,14 +14,14 @@
 </template>
 
 <script setup>
-import { useVideoCallStore } from 'src/Modules/VideoCall/stores/useVideoCallStore.js'
-import { useUserStore } from 'src/Modules/Users/stores/useUserStore.js'
+import { useVideoCallStore } from '../../stores/useVideoCallStore.js'
 import { errorMessage } from 'src/utils/message.js'
 import { computed } from 'vue'
+import { uid } from 'quasar'
 
 
 const props = defineProps({
-  recipientId: {
+  recipientUid: {
     type: [String, Number],
     required: true
   },
@@ -31,11 +31,11 @@ const props = defineProps({
   }
 })
 
-const userStore = useUserStore()
+
 const videoCallStore = useVideoCallStore()
 
 const calling = computed(() => {
-  return videoCallStore.recipient.id === props.recipientId && videoCallStore.statusId === 2
+  return videoCallStore.recipient.uid === props.recipientUid && videoCallStore.statusId === 2
 })
 const stopDialogShow = computed(() => {
   return videoCallStore.statusId === 2
@@ -50,7 +50,8 @@ const call = async () => {
       video: true,
       audio: true
     })
-    videoCallStore.startCall(props.recipientId)
+    const newUid = uid()
+    videoCallStore.startCall(props.recipientUid, newUid)
   } catch (er) {
     errorMessage('У вас нет доступа к камере или микрофону')
   }

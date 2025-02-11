@@ -7,11 +7,11 @@
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
-import IncomingCall from 'src/Modules/VideoCall/components/IncomingCall/Index.vue'
-import VideoDialog from 'src/Modules/VideoCall/components/VideoDialog/index.vue'
-import { useVideoCallStore } from 'src/Modules/VideoCall/stores/useVideoCallStore.js'
+import IncomingCall from '../../components/IncomingCall/Index.vue'
+import VideoDialog from '../../components/VideoDialog/index.vue'
+import { useVideoCallStore } from '../../stores/useVideoCallStore.js'
 import { errorMessage } from 'src/utils/message.js'
-import { useSocketStore } from 'src/Modules/Socket/stores/useSocketStore.js'
+import { useSocketStore } from '../../stores/useSocketStore.js'
 
 const socketStore = useSocketStore()
 
@@ -46,40 +46,40 @@ onUnmounted(() => {
 })
 
 function endCall(data) {
-  if (videoCallStore.recipient?.id === data.recipient.id && videoCallStore.statusId > 1) {
+  if (videoCallStore.callUid === data.callUid && videoCallStore.statusId > 1) {
     errorMessage('Собеседник завершил разговор');
     videoCallStore.setStatusOnline();
   }
 }
 
 function stopCall(data) {
-  if (videoCallStore.recipient?.id === data.recipient.id && videoCallStore.statusId >= 1) {
-    videoCallStore.callRequestFormShow = false;
-    videoCallStore.statusId = 1
+  if (videoCallStore.callUid === data.callUid && videoCallStore.statusId >= 1) {
+    videoCallStore.setStatusOnline();
   }
 }
 
 function rejectCall(data) {
-  if (data.message) errorMessage(data.message);
-  if (videoCallStore.recipient?.id === data.recipient.id && videoCallStore.statusId > 0) {
-    videoCallStore.setStatusOnline();
+  if (videoCallStore.callUid === data.callUid && videoCallStore.statusId > 0) {
+    if (data.message) errorMessage(data.message)
+    videoCallStore.setStatusOnline()
   }
 }
 
 async function takeCall(data) {
   videoCallStore.recipient.socketId = data.recipient.socketId;
-  videoCallStore.recipient.name = data.recipient.name;
+  // videoCallStore.recipient.uid = data.recipient.name;
   videoCallStore.callDialogShow = true;
   videoCallStore.statusId = 10;
 }
 
 async function callRequest(data) {
   if (videoCallStore.statusId === 1) {
+    videoCallStore.callUid = data.callUid;
     videoCallStore.statusId = 3;
     videoCallStore.setRecipient(data.recipient);
     videoCallStore.callRequestFormShow = true;
   } else {
-    videoCallStore.lineIsBusy(data.recipient)
+    videoCallStore.lineIsBusy(data.data)
   }
 }
 

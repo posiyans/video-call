@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
-import { useUserStore } from 'src/Modules/Users/stores/useUserStore.js';
+import { useUserStore } from './useUserStore.js';
 import { errorMessage } from 'src/utils/message.js';
-import { useSocketStore } from 'src/Modules/Socket/stores/useSocketStore.js';
+import { useSocketStore } from './useSocketStore.js';
 import { computed, ref } from 'vue'
+import { uid } from 'quasar'
 
 const StatusLabel = {
   0: 'Offline',
@@ -18,6 +19,7 @@ export const useVideoCallStore = defineStore('videoCall', () => {
 
 
   const statusId = ref(0)
+  const callUid = ref(null)
   const recipient = ref({})
   const callRequestFormShow = ref(false)
   const callDialogShow = ref(false)
@@ -32,12 +34,17 @@ export const useVideoCallStore = defineStore('videoCall', () => {
   }
 
   // Запрос звонка
-  function startCall(recipientId) {
+  function startCall(recipientUid, newCallUid) {
     if (statusId.value === 1) {
-      socketStore.socket.emit('startCall', { recipientId, user: userStore.user });
-      recipient.value = { id: recipientId };
-      isCaller.value = true;
-      statusId.value = 2;
+      callUid.value = newCallUid ?? uid()
+      socketStore.socket.emit('startCall', {
+        recipientUid,
+        callUid: callUid.value,
+        data: userStore.user
+      })
+      recipient.value = { uid: recipientUid }
+      isCaller.value = true
+      statusId.value = 2
     }
   }
 
@@ -50,13 +57,14 @@ export const useVideoCallStore = defineStore('videoCall', () => {
         audio: true
       });
       socketStore.socket.emit('takeCall', {
+        callUid: callUid.value,
         recipient: {
           socketId: recipient.value.socketId
         },
         user: userStore.user
       });
-      statusId.value = 10;
-      callDialogShow.value = true;
+      statusId.value = 10
+      callDialogShow.value = true
     } catch (e) {
       rejectCall('У собеседника нет доступа к камере или микрофону');
       errorMessage('У вас нет доступа к камере или микрофону');
@@ -79,23 +87,25 @@ export const useVideoCallStore = defineStore('videoCall', () => {
   // отклонить входящий звонок
   function rejectCall(message) {
     socketStore.socket.emit('rejectCall', {
+      callUid: callUid.value,
       recipient: {
         socketId: recipient.value.socketId
       },
       user: {
-        id: userStore.user.id
+        uid: userStore.getUid()
       },
       message
-    });
-    setStatusOnline();
+    })
+    setStatusOnline()
   }
 
   function endCall() {
     socketStore.socket.emit('endCall', {
+      callUid: callUid.value,
       recipient: {
         socketId: recipient.value.socketId,
         user: {
-          id: userStore.user.id
+          uid: userStore.getUid()
         }
       }
     });
@@ -104,29 +114,29 @@ export const useVideoCallStore = defineStore('videoCall', () => {
 
   function stopCall() {
     socketStore.socket.emit('stopCall', {
+      callUid: callUid.value,
       recipient: {
-        id: recipient.value.id,
+        uid: recipient.value.uid,
       },
       user: {
-        id: userStore.user.id
+        uid: userStore.getUid()
       }
     });
     setStatusOnline();
   }
 
   function setStatusOnline() {
-    callDialogShow.value = false;
-    callRequestFormShow.value = false;
-    recipient.value = {};
-    statusId.value = 1;
-    isCaller.value = false;
-    stream.value?.getTracks().forEach(track => track.stop());
+    callUid.value = null
+    callDialogShow.value = false
+    callRequestFormShow.value = false
+    recipient.value = {}
+    statusId.value = 1
+    isCaller.value = false
+    stream.value?.getTracks().forEach(track => track.stop())
   }
 
   function setStatusOffline() {
-    callDialogShow.value = false;
-    callRequestFormShow.value = false;
-    recipient.value = {};
+    setStatusOnline()
     statusId.value = 0;
   }
 
@@ -146,7 +156,8 @@ export const useVideoCallStore = defineStore('videoCall', () => {
     stopCall,
     setStatusOnline,
     setStatusOffline,
-    setRecipient
+    setRecipient,
+    callUid
 
   }
 })

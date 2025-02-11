@@ -1,6 +1,6 @@
 import { useVideoCallStore } from 'src/Modules/VideoCall/stores/useVideoCallStore.js'
 
-import { useSocketStore } from 'src/Modules/Socket/stores/useSocketStore.js'
+import { useSocketStore } from '../../stores/useSocketStore.js'
 import { errorMessage } from 'src/utils/message.js'
 
 const socketStore = useSocketStore()
@@ -53,6 +53,7 @@ class WebrtcClass {
     this.peerConnection = new RTCPeerConnection(peerConnectionConfig);
     this.peerConnection.onicecandidate = this.gotIceCandidate.bind(this);
     this.peerConnection.ontrack = this.gotRemoteStream.bind(this);
+    this.peerConnection.onconnectionstatechange = this.connectionstatechange.bind(this);
 
     socketStore.socket.on('sdp', this.sdpMessage.bind(this));
     socketStore.socket.on('ice', this.iceMessage.bind(this));
@@ -63,6 +64,13 @@ class WebrtcClass {
       this.peerConnection.createOffer()
         .then(this.createdDescription.bind(this))
         .catch(this.errorHandler);
+    }
+  }
+
+  connectionstatechange(data) {
+    if (this.peerConnection.connectionState === 'disconnected') {
+      errorMessage('Соединение потяряно')
+      videoCallStore.setStatusOnline()
     }
   }
 

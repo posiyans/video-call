@@ -47,9 +47,9 @@
 </template>
 
 <script setup>
-import { useVideoCallStore } from 'src/Modules/VideoCall/stores/useVideoCallStore.js'
+import { useVideoCallStore } from '../../stores/useVideoCallStore.js'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import WebrtcClass from 'src/Modules/VideoCall/components/VideoDialog/webrtc.js'
+import WebrtcClass from '../../components/VideoDialog/webrtc.js'
 
 const videoCallStore = useVideoCallStore()
 let webrtc = null
@@ -98,7 +98,6 @@ const beforeStart = () => {
 
 const start = () => {
   if (!videoCallStore.callDialogShow) return;
-
   timeStart = Date.now()
   timeIntervalId.value = setInterval(() => {
     time.value = Date.now() - timeStart;
@@ -134,6 +133,7 @@ const statsText = computed(() => {
 function showRemoteStats(results) {
   results.forEach(report => {
     if (report.type === 'inbound-rtp' && report.mediaType === 'video') {
+      // console.log(report)
       const now = report.timestamp;
       if (bt.timestampPrev) {
         statsValue.value.bitrate = Math.floor(
