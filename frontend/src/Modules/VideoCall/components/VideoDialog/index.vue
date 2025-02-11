@@ -58,13 +58,13 @@ const timeIntervalId = ref(null)
 const time = ref(0)
 
 const formattedTime = computed(() => {
-  const tmp = new Date(time.value);
+  const tmp = new Date(time.value)
   return new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Etc/GMT',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
-  }).format(tmp);
+    second: '2-digit'
+  }).format(tmp)
 })
 
 const endCall = () => {
@@ -74,11 +74,10 @@ const endCall = () => {
 
 const clearTimer = () => {
   if (timeIntervalId.value) {
-    clearInterval(timeIntervalId.value);
-    timeIntervalId.value = null;
+    clearInterval(timeIntervalId.value)
+    timeIntervalId.value = null
   }
-};
-
+}
 
 onMounted(() => {
   webrtc = new WebrtcClass()
@@ -97,10 +96,10 @@ const beforeStart = () => {
 }
 
 const start = () => {
-  if (!videoCallStore.callDialogShow) return;
+  if (!videoCallStore.callDialogShow) return
   timeStart = Date.now()
   timeIntervalId.value = setInterval(() => {
-    time.value = Date.now() - timeStart;
+    time.value = Date.now() - timeStart
     if (webrtc?.peerConnection) {
       webrtc
         .peerConnection
@@ -111,12 +110,11 @@ const start = () => {
     }
   }, 1000)
   webrtc.start(videoCallStore.isCaller)
-
 }
 
 const bt = {
   bytesPrev: 0,
-  timestampPrev: 0,
+  timestampPrev: 0
 }
 const statsValue = ref({
   bitrate: null,
@@ -125,26 +123,25 @@ const statsValue = ref({
 const statsText = computed(() => {
   return [
     statsValue.value.bitrate ? `Bitrate: ${statsValue.value.bitrate} kbits/sec` : '',
-    statsValue.value.fps ? `${statsValue.value.fps} fps` : '',
-  ].filter(Boolean).join(' ');
-});
-
+    statsValue.value.fps ? `${statsValue.value.fps} fps` : ''
+  ].filter(Boolean).join(' ')
+})
 
 function showRemoteStats(results) {
   results.forEach(report => {
     if (report.type === 'inbound-rtp' && report.mediaType === 'video') {
       // console.log(report)
-      const now = report.timestamp;
+      const now = report.timestamp
       if (bt.timestampPrev) {
         statsValue.value.bitrate = Math.floor(
           (8 * (report.bytesReceived - bt.bytesPrev)) / (now - bt.timestampPrev)
-        );
+        )
       }
-      bt.bytesPrev = report.bytesReceived;
-      bt.timestampPrev = now;
-      statsValue.value.fps = report.framesPerSecond;
+      bt.bytesPrev = report.bytesReceived
+      bt.timestampPrev = now
+      statsValue.value.fps = report.framesPerSecond
     }
-  });
+  })
 }
 </script>
 

@@ -26,10 +26,10 @@ const socketEvents = {
 }
 
 function insertScriptSrcInHtmlDom(scriptSrc) {
-  var script = document.createElement('script');
-  script.src = scriptSrc;
-  var ref = document.querySelector('script');
-  ref.parentNode.insertBefore(script, ref);
+  const script = document.createElement('script')
+  script.src = scriptSrc
+  const ref = document.querySelector('script')
+  ref.parentNode.insertBefore(script, ref)
 }
 
 onMounted(() => {
@@ -47,14 +47,14 @@ onUnmounted(() => {
 
 function endCall(data) {
   if (videoCallStore.callUid === data.callUid && videoCallStore.statusId > 1) {
-    errorMessage('Собеседник завершил разговор');
-    videoCallStore.setStatusOnline();
+    errorMessage('Собеседник завершил разговор')
+    videoCallStore.setStatusOnline()
   }
 }
 
 function stopCall(data) {
   if (videoCallStore.callUid === data.callUid && videoCallStore.statusId >= 1) {
-    videoCallStore.setStatusOnline();
+    videoCallStore.setStatusOnline()
   }
 }
 
@@ -66,18 +66,17 @@ function rejectCall(data) {
 }
 
 async function takeCall(data) {
-  videoCallStore.recipient.socketId = data.recipient.socketId;
-  // videoCallStore.recipient.uid = data.recipient.name;
-  videoCallStore.callDialogShow = true;
-  videoCallStore.statusId = 10;
+  videoCallStore.recipient.socketId = data.recipient.socketId
+  videoCallStore.callDialogShow = true
+  videoCallStore.statusId = 10
 }
 
 async function callRequest(data) {
   if (videoCallStore.statusId === 1) {
-    videoCallStore.callUid = data.callUid;
-    videoCallStore.statusId = 3;
-    videoCallStore.setRecipient(data.recipient);
-    videoCallStore.callRequestFormShow = true;
+    videoCallStore.callUid = data.callUid
+    videoCallStore.statusId = 3
+    videoCallStore.setRecipient(data.recipient)
+    videoCallStore.callRequestFormShow = true
   } else {
     videoCallStore.lineIsBusy(data.data)
   }
