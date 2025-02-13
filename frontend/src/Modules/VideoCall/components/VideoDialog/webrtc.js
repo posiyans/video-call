@@ -62,7 +62,27 @@ class WebrtcClass {
     }
   }
 
-  connectionstatechange(data) {
+  connectionstatechange() {
+    this.peerConnection
+      .getStats()
+      .then(stats => {
+        const ice = {
+          activeId: null,
+          ice: {}
+        }
+        for (const value of stats.values()) {
+          if (value.type === 'candidate-pair' && value.nominated) {
+            ice.activeId = value.remoteCandidateId
+          }
+          if (value.type === 'local-candidate' || value.type === 'remote-candidate') {
+            ice.ice[value.id] = value
+          }
+        }
+        if (ice.ice[ice.activeId]) {
+          console.log('active ice', ice.ice[ice.activeId])
+        }
+      })
+
     if (this.peerConnection.connectionState === 'disconnected') {
       errorMessage('Соединение потяряно')
       videoCallStore.setStatusOnline()

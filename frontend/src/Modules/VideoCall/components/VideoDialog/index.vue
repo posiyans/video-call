@@ -130,7 +130,6 @@ const statsText = computed(() => {
 function showRemoteStats(results) {
   results.forEach(report => {
     if (report.type === 'inbound-rtp' && report.mediaType === 'video') {
-      // console.log(report)
       const now = report.timestamp
       if (bt.timestampPrev) {
         statsValue.value.bitrate = Math.floor(

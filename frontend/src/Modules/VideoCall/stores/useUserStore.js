@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
   let user = {}
-  let uid = ref(null)
+  const uid = ref(null)
 
   function setUid(value) {
     uid.value = value
